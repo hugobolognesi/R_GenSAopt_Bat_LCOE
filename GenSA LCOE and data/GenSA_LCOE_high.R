@@ -59,15 +59,15 @@ library(clipr)
 rm(list = ls())
 
 # Import data
-data <- read_excel("Data_high.xlsx") #High-demand company power data
+Dados_0 <- read_excel("Data_high.xlsx") #High-demand company power data
 
-P_lim <- round(max(data$Demanda_h),0); # Variable for the contracted demand limit
+P_lim <- round(max(Dados_0$Demanda_h),0); # Variable for the contracted demand limit
 
 # Parameters to vary and find the objective function
 Q_pv <- 100 # Number of installed panels - Variable for optimization
 Q_mod <- 200  # Number of new installed batteries - Variable for optimization
 Dem_TDC_fp <- 70  # Contracted demand off-peak in kW - variable for the minimum
-Dem_TDC_p <- Dem_TDC_fp  # Contracted demand during peak in kW - variable for the minimum
+Dem_TDC_p <- 100  # Contracted demand during peak in kW - variable for the minimum
 Dem_TDG <- 250  # Contracted generation demand in kW - variable for the minimum
 REC <- 0.8  # Percentage of SoH that can recharge with grid energy during off-peak hours
 
@@ -75,12 +75,12 @@ REC <- 0.8  # Percentage of SoH that can recharge with grid energy during off-pe
 ## Start LMO-SLBESS optimization ##
 source("LCOE_SLB_High.R") #Script with LMO-SLB calculation data
 # Defining variables for the minimum objective function using GenSA
-calcular_LCOE_SLB_GenSA <- function(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDG_, P_lim_) {
+calcular_LCOE_SLB_GenSA <- function(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDC_p_, Dem_TDG_, P_lim_) {
   # Definição das variáveis para otimização
-  x0 <- c(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDG_)  # Initial values
+  x0 <- c(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDC_p_, Dem_TDG_)  # Initial values
   # Define initial values, lower bounds, upper bounds, and integer variables
-  lb <- c(0, 1, 0, 0)  # Lower bounds
-  ub <- c(1000, 1000, P_lim_, 1000)  # Upper bounds
+  lb <- c(0, 1, 0, 0, 0)  # Lower bounds
+  ub <- c(1000, 1000, P_lim_, P_lim_, 1000)  # Upper bounds
   #intcon <- rep (TRUE, 2)  # Integer variables
   # Set other SAPSO parameters
   control <- list(
@@ -101,7 +101,7 @@ calcular_LCOE_SLB_GenSA <- function(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDG_, P_lim_
 } 
 
 #Call LCOE minimization function using GenSA
-calcular_LCOE_SLB_GenSA (Q_pv, Q_mod, Dem_TDC_fp, Dem_TDG, P_lim)
+calcular_LCOE_SLB_GenSA (Q_pv, Q_mod, Dem_TDC_fp, Dem_TDC_p, Dem_TDG, P_lim)
 
 ## End LMO-SLBESS optimization ##
 
@@ -112,12 +112,12 @@ calcular_LCOE_SLB_GenSA (Q_pv, Q_mod, Dem_TDC_fp, Dem_TDG, P_lim)
 # Objective function
 source("LCOE_NLIB_High.R")
 # Defining variables for the minimum objective function using GenSA
-calcular_LCOE_NLIB_GenSA <- function(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDG_, P_lim_) {
+calcular_LCOE_NLIB_GenSA <- function(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDC_p_, Dem_TDG_, P_lim_) {
   # Definição das variáveis para otimização
-  x0 <- c(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDG_)  # initial values
+  x0 <- c(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDC_p_, Dem_TDG_)  # initial values
   # Define initial values, lower bounds, upper bounds, and integer variables
-  lb <- c(0, 0, 0, 0)  # Lower bounds
-  ub <- c(1000, 1000, P_lim_, 1000)  # Upper bounds
+  lb <- c(0, 0, 0, 0, 0)  # Lower bounds
+  ub <- c(1000, 1000, P_lim_, P_lim_, 1000)  # Upper bounds
   #intcon <- rep (TRUE, 2)  # Integer variables
   # Set other SAPSO parameters
   control <- list(
@@ -138,7 +138,7 @@ calcular_LCOE_NLIB_GenSA <- function(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDG_, P_lim
 } 
 
 # Call LCOE minimization function using GenSA
-calcular_LCOE_NLIB_GenSA (Q_pv, Q_mod, Dem_TDC_fp, Dem_TDG, P_lim)
+calcular_LCOE_NLIB_GenSA (Q_pv, Q_mod, Dem_TDC_fp, Dem_TDC_p, Dem_TDG, P_lim)
 
 ## End NEW LIB optimization ##
 
@@ -149,12 +149,12 @@ calcular_LCOE_NLIB_GenSA (Q_pv, Q_mod, Dem_TDC_fp, Dem_TDG, P_lim)
 # Função objetivo
 source("LCOE_BAU_High.R")
 # Defining variables for the minimum objective function using GenSA
-calcular_LCOE_BAU_GenSA <- function(Dem_TDC_fp_, P_lim_) {
+calcular_LCOE_BAU_GenSA <- function(Dem_TDC_fp_, Dem_TDC_p_, P_lim_) {
   # Definição das variáveis para otimização
-  x0 <- c(Dem_TDC_fp_)  # Initial values
+  x0 <- c(Dem_TDC_fp_, Dem_TDC_p_)  # Initial values
   # Define initial values, lower bounds, upper bounds, and integer variables
-  lb <- c(0)  # Lower bounds
-  ub <- c(P_lim_)  # Upper bounds
+  lb <- c(0, 0)  # Lower bounds
+  ub <- c(P_lim_, P_lim_)  # Upper bounds
   #intcon <- rep (TRUE, 2)  # Integer variables
   # Set other SAPSO parameters
   control <- list(
@@ -175,7 +175,7 @@ calcular_LCOE_BAU_GenSA <- function(Dem_TDC_fp_, P_lim_) {
 } 
 
 # Call LCOE minimization function using GenSA
-calcular_LCOE_BAU_GenSA (Dem_TDC_fp, P_lim)
+calcular_LCOE_BAU_GenSA (Dem_TDC_fp, Dem_TDC_p, P_lim)
 
 ## End BAU optimization ###
 
@@ -184,15 +184,15 @@ calcular_LCOE_BAU_GenSA (Dem_TDC_fp, P_lim)
 ## Start 2nd Generation SLB ###
 source("LCOE_SLB_LFP_High.R")
 # Defining variables for the minimum objective function using GenSA
-calcular_LCOE_SLB_LFP_GenSA <- function(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDG_, P_lim_) {
+calcular_LCOE_SLB_LFP_GenSA <- function(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDC_p_, Dem_TDG_, P_lim_) {
   # Definição das variáveis para otimização
-  x0 <- c(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDG_)  # Initial values
+  x0 <- c(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDC_p_, Dem_TDG_)  # Initial values
   # Define initial values, lower bounds, upper bounds, and integer variables
-  lb <- c(0, 1, 0, 0)  # Lower bounds
-  ub <- c(1000, 1000, P_lim_, 1000)  # Upper bounds
+  lb <- c(0, 1, 0, 0, 0)  # Lower bounds
+  ub <- c(1000, 1000, P_lim_, P_lim_, 1000)  # Upper bounds
   #intcon <- rep (TRUE, 2)  # Integer variables
   # Set other SAPSO parameters
-  control <- List(
+  control <- list(
     maxit = 2000,    # maximum number of iterations
     verbose = TRUE,    # messages from the algorithm
     smooth = FALSE       # True if the function is differentiable
@@ -210,6 +210,6 @@ calcular_LCOE_SLB_LFP_GenSA <- function(Q_pv_, Q_mod_, Dem_TDC_fp_, Dem_TDG_, P_
 } 
 
 # Chame a função para minimizar LCOE usando GenSA
-calcular_LCOE_SLB_LFP_GenSA (Q_pv, Q_mod, Dem_TDC_fp, Dem_TDG, P_lim)
+calcular_LCOE_SLB_LFP_GenSA (Q_pv, Q_mod, Dem_TDC_fp, Dem_TDC_p, Dem_TDG, P_lim)
 
 ## End of LFP-SLBESS optimization ##
